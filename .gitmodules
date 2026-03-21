@@ -1,0 +1,4 @@
+[submodule "reachy-mini-agora-web-sdk"]
+	path = reachy-mini-agora-web-sdk
+	url = https://github.com/suhaasteja/reachy-mini-agora-web-sdk.git
+	branch = suhaas-dev
