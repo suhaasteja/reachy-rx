@@ -7,6 +7,7 @@ import base64
 import json
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -18,6 +19,7 @@ from openai.types.chat import ChatCompletionMessageToolCall
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_PATH = Path(__file__).parent / "system_prompt.md"
+MEDICATION_LOG_PATH = Path(__file__).parent / "medication_log.json"
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -73,6 +75,39 @@ TOOLS = [
                     }
                 },
                 "required": ["emotion"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "log_medication",
+            "description": "Log an identified medication with its details for patient safety tracking.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Medication name (brand and/or generic).",
+                    },
+                    "dosage": {
+                        "type": "string",
+                        "description": "Dosage strength (e.g. '500mg', '10mg/5mL').",
+                    },
+                    "form": {
+                        "type": "string",
+                        "description": "Dosage form (e.g. 'tablet', 'capsule', 'liquid', 'cream').",
+                    },
+                    "count": {
+                        "type": "string",
+                        "description": "Quantity / count on the label (e.g. '90 tablets', '120 mL').",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Any other details: manufacturer, warnings, active/inactive ingredients, expiration, NDC, etc.",
+                    },
+                },
+                "required": ["name"],
             },
         },
     },
@@ -251,6 +286,36 @@ def execute_tool_calls(
                     duration=0.4,
                 )
                 mini.goto_target(head=REST, duration=0.4)
+
+        elif name == "log_medication":
+            entry = {
+                "timestamp": datetime.now().isoformat(),
+                "name": args.get("name", "unknown"),
+                "dosage": args.get("dosage"),
+                "form": args.get("form"),
+                "count": args.get("count"),
+                "description": args.get("description"),
+            }
+            # Strip None values for cleaner output
+            entry = {k: v for k, v in entry.items() if v is not None}
+
+            # Append to JSON log file
+            if MEDICATION_LOG_PATH.exists():
+                log_data = json.loads(MEDICATION_LOG_PATH.read_text())
+            else:
+                log_data = []
+            log_data.append(entry)
+            MEDICATION_LOG_PATH.write_text(json.dumps(log_data, indent=2) + "\n")
+            print(f"  💊 Logged: {entry['name']} — {entry.get('dosage', '?')} {entry.get('form', '')} (count: {entry.get('count', '?')})")
+
+            # Reachy nods to confirm the log
+            mini.goto_target(
+                head=create_head_pose(pitch=15, degrees=True), duration=0.2
+            )
+            mini.goto_target(
+                head=create_head_pose(pitch=-10, degrees=True), duration=0.2
+            )
+            mini.goto_target(head=REST, duration=0.2)
 
         else:
             print(f"  ⚠ Unknown tool: {name}")
