@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+reachy-mini-agora-web-sdk/.env
