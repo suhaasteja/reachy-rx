@@ -129,7 +129,7 @@ class BaseVLMClient(ABC):
         model: str = "nvidia-nemotron-nano-12b-v2-vl",
         max_tokens: int = 200,
         system_prompt_path: Optional[Path] = None,
-        history_max: int = 10,
+        history_max: int = 100,
     ):
         self.base_url = base_url
         self.model = model
