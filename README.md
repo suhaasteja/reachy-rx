@@ -6,6 +6,8 @@
 
 Built on [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) · Powered by [NVIDIA Nemotron Nano VL](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8) · Voice by [MiniMax TTS](https://www.minimaxi.com/)
 
+![System Architecture](docs/architecture-diagram.svg)
+
 </div>
 
 ---
@@ -119,10 +121,6 @@ Instead of a phone alarm that's easy to ignore, Reachy RX is a physical presence
 Medication non-adherence is one of the biggest problems in elder care. Existing solutions (phone alarms, pill organizers, smart dispensers) are either too easy to ignore or too expensive and complex. A robot with a face, a voice, and a personality is much harder to dismiss, and the dad jokes don't hurt either.
 
 The key insight: **a medication reminder needs to be persistent AND likeable**. Reachy RX escalates from a gentle chirp to an urgent alarm, but always with a warm personality. It's the difference between a nagging phone notification and a friendly nurse who genuinely cares.
-
-### System Overview
-
-![System Architecture](docs/architecture-diagram.svg)
 
 ### How the Vision Loop Works
 
