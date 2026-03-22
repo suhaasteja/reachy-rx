@@ -1,6 +1,25 @@
+# Virtual environments
 .venv/
+reachy-mini-agora-web-sdk/reachy_mini_env/
+
+# Python
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+
+# Build / distribution
+build/
+dist/
+
+# Caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# App-specific
 .stakpak/session*
 debug_frames/
 medication_log.json
@@ -9,3 +28,13 @@ medicine_schedule.csv
 
 # Environment variables (sensitive credentials)
 .env
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
