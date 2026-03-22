@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # Reachy Mini speaker
 REACHY_SAMPLE_RATE = 16000
-VOLUME_BOOST = 3.0  # multiply PCM samples before pushing to speaker
+VOLUME_BOOST = 1.5  # multiply PCM samples before pushing to speaker
 
 # Minimax API
 MINIMAX_API_URL = "https://api.minimax.io/v1/t2a_v2"
@@ -165,7 +165,7 @@ class MinimaxTTSClient:
             "voice_setting": {
                 "voice_id": DEFAULT_VOICE,
                 "speed": 1.0,
-                "vol": 5.0,
+                "vol": 2.0,
                 "pitch": 0,
             },
             "audio_setting": {

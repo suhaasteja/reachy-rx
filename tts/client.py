@@ -111,7 +111,7 @@ def _start_tts_agent(text: str, app_id: str, auth_header: str,
                 "vendor": "minimax",
                 "params": {
                     "voice_setting": {
-                        "voice_id": "English_Strong-WilledBoy",
+                        "voice_id": "English_Upbeat_Woman",
                     },
                     "audio_setting": {
                         "sample_rate": 44100,
@@ -219,6 +219,7 @@ class TTSClient:
         self._connected = False
         self._audio_task: Optional[asyncio.Task] = None
         self._active_agent_id: Optional[str] = None
+        self._speaking = False  # True from speak() until audio playback ends
 
         if not self.app_id:
             logger.warning("AGORA_APP_ID not set — TTS disabled")
@@ -278,9 +279,21 @@ class TTSClient:
 
     async def _wait_for_agent_and_forward(self):
         """Wait for the TTS agent to join, subscribe to its audio, forward to Reachy."""
-        # Agora SDK uses string keys for UIDs internally
         agent_uid_str = str(AGENT_UID)
         agent_uid_int = AGENT_UID
+
+        # Nuke any stale AudioStream objects from previous agents/subscribe cycles.
+        # The SDK keeps these around keyed by UID and they contain old audio data.
+        for uid_key in [agent_uid_str, agent_uid_int]:
+            old_stream = self._channel.channel_event_observer.audio_streams.pop(uid_key, None)
+            if old_stream:
+                # Drain it so nothing leaks
+                while not old_stream.queue.empty():
+                    try:
+                        old_stream.queue.get_nowait()
+                    except Exception:
+                        break
+                logger.debug(f"TTS: cleared stale audio stream for UID {uid_key}")
 
         # Wait for agent to appear in the channel (up to 8 seconds)
         for _ in range(80):
@@ -293,11 +306,11 @@ class TTSClient:
 
         logger.info(f"TTS: agent UID {AGENT_UID} joined channel")
 
-        # Subscribe to agent's audio (SDK expects string uid)
+        # Subscribe to agent's audio — this creates a fresh AudioStream
         await self._channel.subscribe_audio(agent_uid_str)
         logger.info("TTS: subscribed to agent audio")
 
-        # Wait for audio stream to appear (SDK may key by int or string)
+        # Wait for the NEW audio stream to appear
         audio_stream = None
         for _ in range(30):
             audio_stream = (
@@ -315,10 +328,24 @@ class TTSClient:
             )
             return
 
-        # Forward audio frames to Reachy's speaker
+        # Forward audio frames to Reachy's speaker.
+        # Use wait_for() with a timeout on each frame — the SDK can orphan
+        # the queue if it creates a replacement AudioStream during subscribe
+        # thrashing, leaving us blocked forever on .get().
         frame_count = 0
+        self._speaking = True
+        FRAME_TIMEOUT = 3.0  # seconds with no audio → assume agent is done
         try:
-            async for frame in audio_stream:
+            while True:
+                try:
+                    frame = await asyncio.wait_for(
+                        audio_stream.queue.get(), timeout=FRAME_TIMEOUT,
+                    )
+                except asyncio.TimeoutError:
+                    logger.debug("TTS: no audio frames for 3s — assuming done")
+                    break
+                if frame is None:
+                    break  # sentinel from SDK when agent leaves cleanly
                 samples = _pcm_frame_to_float32(frame)
                 if len(samples) > 0:
                     try:
@@ -328,6 +355,8 @@ class TTSClient:
                         logger.debug(f"TTS: push_audio_sample failed: {e}")
         except Exception as e:
             logger.debug(f"TTS: audio stream ended: {e}")
+        finally:
+            self._speaking = False
 
         logger.info(f"TTS: forwarded {frame_count} audio frames to Reachy")
 
@@ -335,10 +364,14 @@ class TTSClient:
         """Start an Agora TTS agent that speaks `text` through Reachy.
 
         Non-blocking — runs in the background event loop.
+        Drops the request if already speaking to avoid overlapping agents.
         """
         if not self.enabled or not self._connected:
             return
         if not text or not text.strip():
+            return
+        if self._speaking:
+            logger.debug(f"TTS: busy, dropping: {text[:50]}")
             return
 
         def _start_and_forward():
