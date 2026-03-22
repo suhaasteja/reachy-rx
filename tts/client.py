@@ -166,14 +166,22 @@ def _stop_tts_agent(agent_id: str, app_id: str, auth_header: str) -> None:
 # PCM conversion
 # ---------------------------------------------------------------------------
 
-def _pcm_frame_to_float32(frame) -> np.ndarray:
+# Default volume boost — Agora TTS output is quiet (~-9 dBFS peak),
+# Reachy's speaker needs more headroom to be audible in a room.
+DEFAULT_VOLUME = 3.0
+
+
+def _pcm_frame_to_float32(frame, volume: float = DEFAULT_VOLUME) -> np.ndarray:
     """Convert an Agora PcmAudioFrame (16-bit PCM bytes) to float32 numpy."""
     pcm_bytes = bytes(frame.data)
     num_samples = len(pcm_bytes) // 2
     if num_samples == 0:
         return np.array([], dtype=np.float32)
     int16_samples = struct.unpack(f"<{num_samples}h", pcm_bytes)
-    return np.array(int16_samples, dtype=np.float32) / 32768.0
+    samples = np.array(int16_samples, dtype=np.float32) / 32768.0
+    # Boost volume and clip to [-1, 1] to avoid distortion
+    samples = np.clip(samples * volume, -1.0, 1.0)
+    return samples
 
 
 # ---------------------------------------------------------------------------
