@@ -109,10 +109,10 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
     schedule = reminder.get_schedule_with_status()
     print(f"✓ Medication reminder loaded — {len(schedule)} doses/day from Google Sheet")
 
-    # Text-to-speech via Agora RTC (receives audio from tts/server.js agent)
+    # Text-to-speech via Agora RTC (pure Python, no Node server needed)
     tts = TTSClient(mini=mini)
     tts.start()
-    print("✓ TTS client ready — make sure 'cd tts && npm start' is running")
+    print("✓ TTS client ready")
 
     if DEBUG:
         FRAME_DEBUG_DIR.mkdir(exist_ok=True)
