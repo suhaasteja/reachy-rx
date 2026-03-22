@@ -66,7 +66,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "remind_medication",
-            "description": "Remind the patient to take a due medication.",
+            "description": "Play a reminder chirp sound and do a reminder gesture for a due medication. Use speak() separately to tell the patient what to take.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -74,12 +74,8 @@ TOOLS = [
                         "type": "string",
                         "description": "Medication name to remind about.",
                     },
-                    "message": {
-                        "type": "string",
-                        "description": "The spoken reminder message for the patient.",
-                    },
                 },
-                "required": ["name", "message"],
+                "required": ["name"],
             },
         },
     },
@@ -101,6 +97,23 @@ TOOLS = [
                     },
                 },
                 "required": ["name", "due_time"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "speak",
+            "description": "Say something out loud to the patient through the robot's speaker. This is the ONLY way the patient can hear you. If you don't call speak(), the patient hears nothing.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "The exact words to say out loud to the patient. Keep it short and clear.",
+                    },
+                },
+                "required": ["message"],
             },
         },
     },
@@ -127,7 +140,7 @@ class BaseVLMClient(ABC):
         self,
         base_url: str = "http://localhost:1234/v1",
         model: str = "nvidia-nemotron-nano-12b-v2-vl",
-        max_tokens: int = 200,
+        max_tokens: int = 1024,
         system_prompt_path: Optional[Path] = None,
         history_max: int = 100,
     ):
@@ -238,6 +251,7 @@ def execute_tool_calls(
     tool_calls: list[ChatCompletionMessageToolCall],
     mini: "ReachyMini",
     reminder: "MedicationReminder | None" = None,
+    tts: "TTSClient | None" = None,
 ) -> None:
     """Execute tool calls from the VLM by driving Reachy Mini."""
     from reachy_mini.utils import create_head_pose
@@ -298,7 +312,6 @@ def execute_tool_calls(
 
         elif name == "remind_medication":
             med_name = args["name"]  # guaranteed by guard above
-            message = args.get("message", f"Time to take your {med_name}!")
             # Track nag count per medication for escalating gestures
             if not hasattr(execute_tool_calls, "_nag_counts"):
                 execute_tool_calls._nag_counts = {}
@@ -307,7 +320,7 @@ def execute_tool_calls(
 
             intensity = min(nag, 4)  # cap at level 4
             labels = {1: "gentle", 2: "nudge", 3: "insistent", 4: "URGENT"}
-            print(f"  ⏰ REMINDER ({labels[intensity]} #{nag}): {message}")
+            print(f"  ⏰ REMINDER ({labels[intensity]} #{nag}): {med_name}")
 
             # Play escalating sound through Reachy's speaker
             sound_samples, _ = get_reminder_sound(intensity)
@@ -461,6 +474,14 @@ def execute_tool_calls(
                 duration=0.4,
             )
             mini.goto_target(head=REST, antennas=[0.0, 0.0], duration=0.5)
+
+        elif name == "speak":
+            message = args.get("message", "")
+            if message and tts:
+                print(f"  🔊 \"{message}\"")
+                tts.speak(message)
+            elif message:
+                print(f"  🔊 (no TTS) \"{message}\"")
 
         else:
             print(f"  ⚠ Unknown tool: {name}")

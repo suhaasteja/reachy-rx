@@ -1,4 +1,5 @@
 import argparse
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from reachy_mini import ReachyMini
 from reachy_mini.media.camera_utils import find_camera
 
 from medication_reminder import MedicationReminder
-from tts import TTSClient
+from minimax_tts import MinimaxTTSClient as TTSClient
 from vlm_client import execute_tool_calls
 
 FRAME_DEBUG_DIR = Path("debug_frames")
@@ -92,6 +93,11 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
     # Start audio output so push_audio_sample() works
     try:
         mini.media.start_playing()
+        # Flush any stale audio left in the buffer from a previous run
+        try:
+            mini.media.audio.clear_output_buffer()
+        except Exception:
+            pass
         print("✓ Speaker ready")
     except Exception as e:
         print(f"⚠ Speaker unavailable ({e}) — running without audio")
@@ -119,17 +125,13 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
         print(f"✓ Debug frames → {FRAME_DEBUG_DIR.resolve()}")
 
     # -----------------------------------------------------------------------
-    # Vision loop with overlapped LLM streaming
+    # Vision loop — sequential: capture → think → act → repeat
     #
-    # Timeline per iteration:
-    #   1. Capture frame + inject reminders + kick off LLM (async)
-    #   2. Execute PREVIOUS cycle's actions (motor time overlaps LLM network)
-    #   3. Collect LLM result → becomes next cycle's actions
+    # Actions (including speak) run to completion before the next frame.
+    # This avoids overlapping TTS agents and garbled audio.
     # -----------------------------------------------------------------------
 
     step = 0
-    pending_tool_calls = []  # actions from the previous LLM cycle
-    llm_future = None
     person_greeted = False  # has the current person been greeted?
     person_was_present = False  # was a person present last frame?
 
@@ -150,21 +152,20 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
 
             # Person presence status (VLM-driven state machine)
             if not person_was_present:
-                # Either first frame or person was absent last frame
-                # VLM will see if someone is there; tell it to greet if so
                 context_parts.append(
-                    "🆕 If you see a person, this is a NEW PERSON — greet them warmly! "
-                    'Say hello, nod_yes(), and express_emotion({"emotion": "happy"}).'
+                    "🆕 If you see a person, this is a NEW PERSON — greet them ONCE. "
+                    'Use nod_yes() and speak({"message": "Hello! ..."}).'
                 )
             else:
                 if person_greeted:
                     context_parts.append(
-                        "👤 PATIENT PRESENT — already greeted, continue your duties."
+                        "👤 PATIENT PRESENT — already greeted. Do NOT say hello again. "
+                        "Only speak if you have something new to say (medication reminder, verification, etc.)."
                     )
                 else:
                     context_parts.append(
-                        "🆕 NEW PERSON DETECTED — greet them warmly! "
-                        'Say hello, nod_yes(), and express_emotion({"emotion": "happy"}).'
+                        "🆕 NEW PERSON DETECTED — greet them ONCE. "
+                        'Use nod_yes() and speak({"message": "Hello! ..."}).'
                     )
 
             # Medication reminders
@@ -187,7 +188,10 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
                         line += f" [reminder #{nag}]"
                     reminder_lines.append(f"  • {line}")
                     reminder_lines.append(
-                        f'    → Call: remind_medication({{"name": "{name}", "message": "Time to take your {name} {dosage}!"}})'
+                        f'    → Call: remind_medication({{"name": "{name}"}})'
+                    )
+                    reminder_lines.append(
+                        f'    → Call: speak({{"message": "Time to take your {name} {dosage}!"}})'
                     )
 
                 reminder_lines.append(
@@ -222,21 +226,27 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
             if context_parts:
                 vlm.inject_context("\n\n".join(context_parts))
 
-            # Kick off LLM call in background thread
-            llm_future = vlm.step_async(frame)
-
-            # While LLM is thinking, execute PREVIOUS cycle's actions
-            if pending_tool_calls:
-                execute_tool_calls(pending_tool_calls, mini, reminder=reminder)
-                pending_tool_calls = []
-
-            # Collect LLM result (blocks until done — but motor time was free)
-            text, tool_calls = vlm.step_collect(llm_future)
-            llm_future = None
+            # --- Think ---
+            text, tool_calls = vlm.step(frame)
 
             if text:
-                print(f"VLM: {text}")
-                tts.speak(text)
+                if DEBUG:
+                    print(f"VLM: {text}")
+
+            # --- Act (blocking — runs all actions including TTS to completion) ---
+            if tool_calls:
+                execute_tool_calls(tool_calls, mini, reminder=reminder, tts=tts)
+
+                # Wait for TTS to finish before next frame (timeout 20s)
+                if tts.speaking:
+                    if DEBUG:
+                        print("[debug] waiting for TTS to finish...")
+                    deadline = time.monotonic() + 20.0
+                    while tts.speaking and time.monotonic() < deadline:
+                        time.sleep(0.1)
+                    if tts.speaking:
+                        print("⚠ TTS wait timed out — continuing")
+                        tts.speaking = False
 
             # Track person presence from VLM output
             text_lower = (text or "").lower()
@@ -298,17 +308,10 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
                 for i, h in enumerate(vlm._history):
                     print(f"  {i}: {h}")
 
-            # Stash for next cycle (will execute while next LLM call runs)
-            pending_tool_calls = tool_calls
-
             if not tool_calls and DEBUG:
                 print("[debug] no tool calls returned")
 
     finally:
-        # Execute any remaining actions before shutdown
-        if pending_tool_calls:
-            execute_tool_calls(pending_tool_calls, mini, reminder=reminder)
-
         tts.shutdown()
 
         try:
