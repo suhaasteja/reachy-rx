@@ -183,9 +183,11 @@ def _pcm_frame_to_float32(frame) -> np.ndarray:
 class TTSClient:
     """Agora RTC-based TTS that pushes audio directly to Reachy's speaker.
 
-    Runs an asyncio event loop in a background thread. On speak(), starts
-    an Agora Conversational AI agent via REST API, receives its audio
-    stream over RTC, and forwards PCM frames to Reachy.
+    Runs an asyncio event loop in a background thread. On speak():
+    1. Starts an Agora Conversational AI agent via REST API
+    2. Waits for the agent to join the RTC channel
+    3. Subscribes to the agent's audio stream
+    4. Forwards PCM frames to Reachy's speaker
     """
 
     def __init__(self, mini: "ReachyMini"):
@@ -251,7 +253,7 @@ class TTSClient:
         self._loop.run_forever()
 
     async def _connect(self):
-        """Connect to Agora RTC channel and subscribe to agent audio."""
+        """Connect to Agora RTC channel. Don't subscribe yet — agent isn't there."""
         from agora_realtime_ai_api.rtc import RtcEngine, RtcOptions
 
         self._rtc = RtcEngine(appid=self.app_id, appcert="")
@@ -264,67 +266,105 @@ class TTSClient:
         self._channel = self._rtc.create_channel(options)
         await self._channel.connect()
         logger.info(f"TTS: joined Agora channel '{CHANNEL_NAME}' as UID {CLIENT_UID}")
-
-        # Subscribe to agent's audio
-        await self._channel.subscribe_audio(AGENT_UID)
-        logger.info(f"TTS: subscribed to agent UID {AGENT_UID}")
         self._connected = True
 
-        # Start forwarding audio frames to Reachy
-        self._audio_task = asyncio.ensure_future(self._forward_audio())
+    async def _wait_for_agent_and_forward(self):
+        """Wait for the TTS agent to join, subscribe to its audio, forward to Reachy."""
+        # Agora SDK uses string keys for UIDs internally
+        agent_uid_str = str(AGENT_UID)
+        agent_uid_int = AGENT_UID
 
-    async def _forward_audio(self):
-        """Read PCM frames from the Agora agent and push to Reachy's speaker."""
-        while self._connected:
-            audio_stream = self._channel.get_audio_frames(AGENT_UID)
-            if audio_stream is None:
-                await asyncio.sleep(0.1)
-                continue
+        # Wait for agent to appear in the channel (up to 8 seconds)
+        for _ in range(80):
+            if agent_uid_str in self._channel.remote_users or agent_uid_int in self._channel.remote_users:
+                break
+            await asyncio.sleep(0.1)
+        else:
+            logger.warning(f"TTS: agent never joined. remote_users={self._channel.remote_users}")
+            return
 
-            try:
-                async for frame in audio_stream:
-                    if not self._connected:
-                        break
-                    samples = _pcm_frame_to_float32(frame)
-                    if len(samples) > 0:
-                        try:
-                            self.mini.media.push_audio_sample(samples)
-                        except Exception as e:
-                            logger.debug(f"TTS: push_audio_sample failed: {e}")
-            except Exception as e:
-                logger.debug(f"TTS: audio stream interrupted: {e}")
-                await asyncio.sleep(0.5)
+        logger.info(f"TTS: agent UID {AGENT_UID} joined channel")
+
+        # Subscribe to agent's audio (SDK expects string uid)
+        await self._channel.subscribe_audio(agent_uid_str)
+        logger.info("TTS: subscribed to agent audio")
+
+        # Wait for audio stream to appear (SDK may key by int or string)
+        audio_stream = None
+        for _ in range(30):
+            audio_stream = (
+                self._channel.get_audio_frames(agent_uid_int)
+                or self._channel.get_audio_frames(agent_uid_str)
+            )
+            if audio_stream is not None:
+                break
+            await asyncio.sleep(0.1)
+
+        if audio_stream is None:
+            logger.warning(
+                f"TTS: no audio stream. available streams="
+                f"{list(self._channel.channel_event_observer.audio_streams.keys())}"
+            )
+            return
+
+        # Forward audio frames to Reachy's speaker
+        frame_count = 0
+        try:
+            async for frame in audio_stream:
+                samples = _pcm_frame_to_float32(frame)
+                if len(samples) > 0:
+                    try:
+                        self.mini.media.push_audio_sample(samples)
+                        frame_count += 1
+                    except Exception as e:
+                        logger.debug(f"TTS: push_audio_sample failed: {e}")
+        except Exception as e:
+            logger.debug(f"TTS: audio stream ended: {e}")
+
+        logger.info(f"TTS: forwarded {frame_count} audio frames to Reachy")
 
     def speak(self, text: str) -> None:
         """Start an Agora TTS agent that speaks `text` through Reachy.
 
-        Non-blocking — the REST API call runs in a background thread.
-        Audio arrives via the already-connected RTC channel.
+        Non-blocking — runs in the background event loop.
         """
         if not self.enabled or not self._connected:
             return
         if not text or not text.strip():
             return
 
-        def _start():
-            # Stop any previous agent first
+        def _start_and_forward():
+            # Stop any previous agent
             if self._active_agent_id:
                 _stop_tts_agent(self._active_agent_id, self.app_id, self._auth_header)
                 self._active_agent_id = None
 
+            # Cancel previous audio forwarding task
+            if self._audio_task and not self._audio_task.done():
+                self._audio_task.cancel()
+
+            # Start new agent via REST API
             agent_id = _start_tts_agent(
                 text, self.app_id, self._auth_header, self.channel_token,
             )
-            if agent_id:
-                self._active_agent_id = agent_id
+            if not agent_id:
+                return
+            self._active_agent_id = agent_id
 
-        threading.Thread(target=_start, daemon=True).start()
+            # Schedule audio forwarding on the event loop
+            asyncio.run_coroutine_threadsafe(
+                self._wait_for_agent_and_forward(), self._loop,
+            )
+
+        threading.Thread(target=_start_and_forward, daemon=True).start()
 
     def stop_speaking(self) -> None:
         """Stop the current TTS agent immediately."""
         if self._active_agent_id:
             agent_id = self._active_agent_id
             self._active_agent_id = None
+            if self._audio_task and not self._audio_task.done():
+                self._audio_task.cancel()
             threading.Thread(
                 target=_stop_tts_agent,
                 args=(agent_id, self.app_id, self._auth_header),
