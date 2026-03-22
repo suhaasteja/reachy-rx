@@ -50,30 +50,54 @@ def parse_tool_calls_from_text(
     cleaned_lines: list[str] = []
     counter = 0
 
+    # Build a pattern that matches tool_name( ... ) where the args may contain
+    # nested parens / closing-parens inside JSON strings (e.g. "20mg)").
+    # Strategy: match the tool name, then grab everything up to the LAST ')' on
+    # the line that still yields valid JSON (greedy match + right-strip).
     func_pattern = re.compile(
-        r"\b(" + "|".join(re.escape(n) for n in TOOL_NAMES) + r")\s*\(([^)]*)\)"
+        r"\b(" + "|".join(re.escape(n) for n in TOOL_NAMES) + r")\s*\((.+)\)\s*$",
+        re.MULTILINE,
+    )
+    # Also keep a simple pattern for no-arg calls like  nod_yes()
+    func_pattern_noargs = re.compile(
+        r"\b(" + "|".join(re.escape(n) for n in TOOL_NAMES) + r")\s*\(\s*\)"
     )
     xml_pattern = re.compile(r"<tool_call>(.*?)</tool_call>", re.DOTALL)
 
     for line in text.splitlines():
         matched = False
 
-        for m in func_pattern.finditer(line):
+        # Try no-arg calls first:  nod_yes()  shake_no()
+        for m in func_pattern_noargs.finditer(line):
             name = m.group(1)
-            raw_args = m.group(2).strip()
-            try:
-                args = json.loads(raw_args) if raw_args else {}
-            except json.JSONDecodeError:
-                args = {}
             parsed.append(
                 ChatCompletionMessageToolCall(
                     id=f"fallback_{counter}",
                     type="function",
-                    function=Function(name=name, arguments=json.dumps(args)),
+                    function=Function(name=name, arguments="{}"),
                 )
             )
             counter += 1
             matched = True
+
+        # Try calls with arguments (greedy — captures up to last ')' on line)
+        if not matched:
+            for m in func_pattern.finditer(line):
+                name = m.group(1)
+                raw_args = m.group(2).strip()
+                try:
+                    args = json.loads(raw_args) if raw_args else {}
+                except json.JSONDecodeError:
+                    args = {}
+                parsed.append(
+                    ChatCompletionMessageToolCall(
+                        id=f"fallback_{counter}",
+                        type="function",
+                        function=Function(name=name, arguments=json.dumps(args)),
+                    )
+                )
+                counter += 1
+                matched = True
 
         for m in xml_pattern.finditer(line):
             try:

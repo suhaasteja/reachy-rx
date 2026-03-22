@@ -27,7 +27,14 @@ parser.add_argument(
 parser.add_argument(
     "--lmstudio",
     action="store_true",
-    help="Use LM Studio client (text-parsed tool calls)",
+    default=True,
+    help="Use LM Studio client (text-parsed tool calls) [default: enabled]",
+)
+parser.add_argument(
+    "--no-lmstudio",
+    action="store_false",
+    dest="lmstudio",
+    help="Use standard OpenAI client (structured tool calls only)",
 )
 parser.add_argument(
     "--sheet-url",
