@@ -36,5 +36,8 @@ medicine_schedule.csv
 .vscode/
 .idea/
 
+# Node
+node_modules/
+
 # Logs
 *.log

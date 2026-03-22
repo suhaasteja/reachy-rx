@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agora TTS - Text to Speech</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 15px;
+            padding: 12px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        textarea:focus { border-color: #4a9eff; }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-speak {
+            background: #4a9eff;
+            color: #fff;
+        }
+        .btn-speak:hover:not(:disabled) { background: #3a8eef; }
+        .btn-stop {
+            background: #ff4a4a;
+            color: #fff;
+        }
+        .btn-stop:hover:not(:disabled) { background: #e03a3a; }
+        .status-bar {
+            margin-top: 20px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .status-idle { background: #1e1e1e; color: #666; }
+        .status-connecting { background: #2a2200; color: #ffcc00; }
+        .status-playing { background: #002a00; color: #44dd44; }
+        .status-error { background: #2a0000; color: #ff6666; }
+        #logs {
+            margin-top: 20px;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .log-info { color: #4a9eff; }
+        .log-ok { color: #44dd44; }
+        .log-err { color: #ff6666; }
+        .log-warn { color: #ffcc00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agora TTS</h1>
+        <p class="subtitle">Type text, hear it spoken via Agora Conversational AI</p>
+
+        <label for="text">Text to speak</label>
+        <textarea id="text" placeholder="Enter text to convert to speech...">Hello! I am your friendly pharmacist robot. How can I help you today?</textarea>
+
+        <div class="btn-row">
+            <button class="btn-speak" id="speakBtn" onclick="speak()">Speak</button>
+            <button class="btn-stop" id="stopBtn" onclick="stop()" disabled>Stop</button>
+        </div>
+
+        <div id="status" class="status-bar status-idle">Ready</div>
+        <div id="logs"></div>
+    </div>
+
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+    <script>
+        const SERVER = window.location.origin;
+        const CHANNEL = "tts_channel";
+        const USER_UID = 12345;
+        const AGENT_UID = 1000;
+
+        let client = null;
+        let joined = false;
+        let currentAgentId = null;
+
+        function log(msg, type = "info") {
+            const el = document.getElementById("logs");
+            const d = document.createElement("div");
+            d.className = `log-${type}`;
+            d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            el.appendChild(d);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function setStatus(text, state) {
+            const el = document.getElementById("status");
+            el.textContent = text;
+            el.className = `status-bar status-${state}`;
+        }
+
+        async function ensureJoined() {
+            if (joined) return;
+
+            client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+            client.on("user-published", async (user, mediaType) => {
+                log(`Agent published ${mediaType}`, "ok");
+                await client.subscribe(user, mediaType);
+                if (mediaType === "audio") {
+                    user.audioTrack.play();
+                    setStatus("Playing audio...", "playing");
+                    log("Playing agent audio", "ok");
+                }
+            });
+
+            client.on("user-unpublished", (user, mediaType) => {
+                log(`Agent unpublished ${mediaType}`, "warn");
+            });
+
+            // Read APP_ID from server config endpoint or use the one from the page
+            let appId;
+            try {
+                const resp = await fetch(`${SERVER}/config`);
+                const cfg = await resp.json();
+                appId = cfg.app_id;
+            } catch (_) {
+                log("Could not fetch config from server", "err");
+                return;
+            }
+
+            log(`Joining channel "${CHANNEL}" as UID ${USER_UID}...`, "info");
+            await client.join(appId, CHANNEL, null, USER_UID);
+            joined = true;
+            log("Joined channel", "ok");
+        }
+
+        async function speak() {
+            const text = document.getElementById("text").value.trim();
+            if (!text) return;
+
+            document.getElementById("speakBtn").disabled = true;
+            document.getElementById("stopBtn").disabled = false;
+            setStatus("Starting agent...", "connecting");
+
+            try {
+                // Join the Agora channel first so we can hear the agent
+                await ensureJoined();
+
+                // Tell the backend to start the TTS agent
+                log("Requesting TTS agent...", "info");
+                const resp = await fetch(`${SERVER}/speak`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    throw new Error(data.error || JSON.stringify(data));
+                }
+
+                currentAgentId = data.agent_id;
+                log(`Agent started: ${data.agent_id}`, "ok");
+                setStatus("Agent speaking...", "playing");
+            } catch (err) {
+                log(`Error: ${err.message}`, "err");
+                setStatus("Error", "error");
+            }
+
+            document.getElementById("speakBtn").disabled = false;
+        }
+
+        async function stop() {
+            document.getElementById("stopBtn").disabled = true;
+            setStatus("Stopping...", "connecting");
+
+            try {
+                const resp = await fetch(`${SERVER}/stop`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ agent_id: currentAgentId }),
+                });
+                await resp.json();
+                currentAgentId = null;
+                log("Agent stopped", "ok");
+            } catch (err) {
+                log(`Error stopping: ${err.message}`, "err");
+            }
+
+            setStatus("Ready", "idle");
+            document.getElementById("speakBtn").disabled = false;
+        }
+
+        log("TTS client ready", "info");
+    </script>
+</body>
+</html>
