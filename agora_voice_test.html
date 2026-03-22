@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reachy Voice Test - Agora</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .status.disconnected {
+            background: #fee;
+            color: #c33;
+        }
+        .status.connecting {
+            background: #ffc;
+            color: #880;
+        }
+        .status.connected {
+            background: #efe;
+            color: #3a3;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0051d5;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .danger {
+            background: #ff3b30;
+        }
+        .danger:hover {
+            background: #d32f2f;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .info code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        #logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .log-entry {
+            margin: 3px 0;
+        }
+        .log-info { color: #4fc3f7; }
+        .log-success { color: #81c784; }
+        .log-error { color: #e57373; }
+        .log-warning { color: #ffb74d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Reachy Voice Test</h1>
+        <p>Test voice interaction with your Reachy pharmacist robot</p>
+
+        <div id="status" class="status disconnected">
+            ⚫ Disconnected
+        </div>
+
+        <div class="info">
+            <strong>Instructions:</strong><br>
+            1. Click "Join Voice Channel" to connect<br>
+            2. Allow microphone access when prompted<br>
+            3. Speak to Reachy - the agent will respond with voice<br>
+            4. The agent UID is <code>1000</code>, you'll join as a random user
+        </div>
+
+        <div>
+            <button id="joinBtn" onclick="joinChannel()">Join Voice Channel</button>
+            <button id="leaveBtn" onclick="leaveChannel()" disabled class="danger">Leave Channel</button>
+        </div>
+
+        <div id="logs"></div>
+    </div>
+
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+    <script>
+        const APP_ID = "0de6d66bf5f14a4faca7fa75cbf96e8c";
+        const CHANNEL = "reachy_conversation";
+        const TOKEN = null; // No token for testing
+
+        let client;
+        let localAudioTrack;
+        let joined = false;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(text, state) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = `status ${state}`;
+        }
+
+        async function joinChannel() {
+            if (joined) return;
+
+            try {
+                updateStatus('🟡 Connecting...', 'connecting');
+                log('Initializing Agora client...', 'info');
+
+                client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+                // Use UID 12345 to match agent's remote_rtc_uids configuration
+                const uid = 12345;
+
+                // Subscribe to remote users (the agent)
+                client.on("user-published", async (user, mediaType) => {
+                    log(`Agent published ${mediaType}`, 'success');
+                    await client.subscribe(user, mediaType);
+                    
+                    if (mediaType === "audio") {
+                        const remoteAudioTrack = user.audioTrack;
+                        remoteAudioTrack.play();
+                        log('🔊 Playing agent audio', 'success');
+                    }
+                });
+
+                client.on("user-unpublished", (user, mediaType) => {
+                    log(`Agent unpublished ${mediaType}`, 'warning');
+                });
+
+                // Join the channel
+                log(`Joining channel "${CHANNEL}" as UID ${uid}...`, 'info');
+                await client.join(APP_ID, CHANNEL, TOKEN, uid);
+                log(`✅ Joined channel successfully!`, 'success');
+
+                // Create and publish local audio track
+                log('Creating microphone track...', 'info');
+                localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                await client.publish([localAudioTrack]);
+                log('🎤 Microphone published - you can now speak!', 'success');
+
+                joined = true;
+                updateStatus('🟢 Connected - Speak to Reachy!', 'connected');
+                document.getElementById('joinBtn').disabled = true;
+                document.getElementById('leaveBtn').disabled = false;
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                updateStatus('⚫ Disconnected', 'disconnected');
+                console.error(error);
+            }
+        }
+
+        async function leaveChannel() {
+            if (!joined) return;
+
+            try {
+                log('Leaving channel...', 'info');
+                
+                if (localAudioTrack) {
+                    localAudioTrack.close();
+                }
+                
+                await client.leave();
+                joined = false;
+                
+                updateStatus('⚫ Disconnected', 'disconnected');
+                log('✅ Left channel successfully', 'success');
+                
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('leaveBtn').disabled = true;
+
+            } catch (error) {
+                log(`❌ Error leaving: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        log('🤖 Reachy Voice Test ready', 'info');
+        log(`App ID: ${APP_ID}`, 'info');
+        log(`Channel: ${CHANNEL}`, 'info');
+    </script>
+</body>
+</html>
