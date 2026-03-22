@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reachy Mini Agora WebRTC</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.0.js"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>Reachy Mini Agora WebRTC</h1>
+    <p id="status">Initializing...</p>
+    <div class="page-layout">
+      <div class="main-column">
+        <div class="grid">
+          <section>
+            <h2>Reachy Mini Camera</h2>
+            <div id="local-video" class="video"></div>
+          </section>
+          <section class="vision-panel">
+            <h2>Ollama VLM (last result)</h2>
+            <p class="hint">One webcam frame → Ollama. Text is sent to Agora <strong>speak</strong> + LLM context update when enabled (server).</p>
+            <div id="vision-out" class="vision-out" aria-live="polite">—</div>
+          </section>
+        </div>
+        <pre id="log"></pre>
+      </div>
+      <aside class="side-column" aria-label="Ollama and Agora vision log">
+        <h2>Ollama / Agora</h2>
+        <p class="hint side-hint">Latest VLM output and REST handoff (<code>context_append</code>, <code>speak</code>).</p>
+        <pre id="ollama-log" class="ollama-log"></pre>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="/static/app.js?v=20260322-2"></script>
+</body>
+</html>
