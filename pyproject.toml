@@ -3,7 +3,7 @@ name = "reachy"
 version = "0.1.0"
 description = "Reachy Mini pharmacist robot — medication identification, reminders, and patient interaction"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "reachy-mini[mujoco]>=1.5.1",
     "openai>=1.0.0",
@@ -11,6 +11,7 @@ dependencies = [
     "soundfile>=0.13.1",
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
+    "agora-realtime-ai-api>=1.1.0",
 ]
 
 [tool.uv]

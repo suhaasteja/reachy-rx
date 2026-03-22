@@ -7,6 +7,7 @@ from reachy_mini import ReachyMini
 from reachy_mini.media.camera_utils import find_camera
 
 from medication_reminder import MedicationReminder
+from tts import TTSClient
 from vlm_client import execute_tool_calls
 
 FRAME_DEBUG_DIR = Path("debug_frames")
@@ -107,6 +108,11 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
     reminder = MedicationReminder(**reminder_kwargs)
     schedule = reminder.get_schedule_with_status()
     print(f"✓ Medication reminder loaded — {len(schedule)} doses/day from Google Sheet")
+
+    # Text-to-speech via Agora RTC (receives audio from tts/server.js agent)
+    tts = TTSClient(mini=mini)
+    tts.start()
+    print("✓ TTS client ready — make sure 'cd tts && npm start' is running")
 
     if DEBUG:
         FRAME_DEBUG_DIR.mkdir(exist_ok=True)
@@ -230,6 +236,7 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
 
             if text:
                 print(f"VLM: {text}")
+                tts.speak(text)
 
             # Track person presence from VLM output
             text_lower = (text or "").lower()
@@ -301,6 +308,8 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
         # Execute any remaining actions before shutdown
         if pending_tool_calls:
             execute_tool_calls(pending_tool_calls, mini, reminder=reminder)
+
+        tts.shutdown()
 
         try:
             mini.media.stop_playing()
