@@ -27,8 +27,6 @@ uv run reachy-mini-daemon --sim
 
 > **Note:** Keep the daemon terminal open. It must stay running while the app is active.
 
-**Verify:** Open [http://localhost:8000/docs](http://localhost:8000/docs). If you see the Reachy SDK API docs, you're good.
-
 ### 3. Run the app
 
 In a **new terminal**:
