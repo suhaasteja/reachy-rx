@@ -12,10 +12,23 @@ from vlm_client import execute_tool_calls
 FRAME_DEBUG_DIR = Path("debug_frames")
 
 parser = argparse.ArgumentParser(description="Reachy Mini VLM vision loop")
-parser.add_argument("--debug", action="store_true", help="Enable debug logging and frame capture")
-parser.add_argument("--model", type=str, default="nvidia-nemotron-nano-12b-v2-vl", help="VLM model name")
-parser.add_argument("--server", type=str, default="http://localhost:1234/v1", help="VLM server base URL")
-parser.add_argument("--lmstudio", action="store_true", help="Use LM Studio client (text-parsed tool calls)")
+parser.add_argument(
+    "--debug", action="store_true", help="Enable debug logging and frame capture"
+)
+parser.add_argument(
+    "--model", type=str, default="nemotron-nano-12b-vl", help="VLM model name"
+)
+parser.add_argument(
+    "--server",
+    type=str,
+    default="https://miss-constraint-rna-artwork.trycloudflare.com/v1",
+    help="VLM server base URL",
+)
+parser.add_argument(
+    "--lmstudio",
+    action="store_true",
+    help="Use LM Studio client (text-parsed tool calls)",
+)
 parser.add_argument(
     "--sheet-url",
     type=str,
@@ -104,8 +117,8 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
     step = 0
     pending_tool_calls = []  # actions from the previous LLM cycle
     llm_future = None
-    person_greeted = False    # has the current person been greeted?
-    person_was_present = False # was a person present last frame?
+    person_greeted = False  # has the current person been greeted?
+    person_was_present = False  # was a person present last frame?
 
     try:
         while True:
@@ -128,15 +141,17 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
                 # VLM will see if someone is there; tell it to greet if so
                 context_parts.append(
                     "🆕 If you see a person, this is a NEW PERSON — greet them warmly! "
-                    "Say hello, nod_yes(), and express_emotion({\"emotion\": \"happy\"})."
+                    'Say hello, nod_yes(), and express_emotion({"emotion": "happy"}).'
                 )
             else:
                 if person_greeted:
-                    context_parts.append("👤 PATIENT PRESENT — already greeted, continue your duties.")
+                    context_parts.append(
+                        "👤 PATIENT PRESENT — already greeted, continue your duties."
+                    )
                 else:
                     context_parts.append(
                         "🆕 NEW PERSON DETECTED — greet them warmly! "
-                        "Say hello, nod_yes(), and express_emotion({\"emotion\": \"happy\"})."
+                        'Say hello, nod_yes(), and express_emotion({"emotion": "happy"}).'
                     )
 
             # Medication reminders
@@ -159,7 +174,7 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
                         line += f" [reminder #{nag}]"
                     reminder_lines.append(f"  • {line}")
                     reminder_lines.append(
-                        f"    → Call: remind_medication({{\"name\": \"{name}\", \"message\": \"Time to take your {name} {dosage}!\"}})"
+                        f'    → Call: remind_medication({{"name": "{name}", "message": "Time to take your {name} {dosage}!"}})'
                     )
 
                 reminder_lines.append(
@@ -176,7 +191,9 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
 
                 context_parts.append("\n".join(reminder_lines))
                 if DEBUG:
-                    print(f"[debug] injected {len(due_meds)} reminder(s), nag counts: {[m.get('nag_count') for m in due_meds]}")
+                    print(
+                        f"[debug] injected {len(due_meds)} reminder(s), nag counts: {[m.get('nag_count') for m in due_meds]}"
+                    )
             else:
                 # No meds due right now — if some were taken today, tell the model
                 taken_today = reminder.get_taken_today()
@@ -209,14 +226,38 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
 
             # Track person presence from VLM output
             text_lower = (text or "").lower()
-            person_now_present = any(w in text_lower for w in [
-                "person", "someone", "patient", "human", "face", "man", "woman",
-                "hello", "hi ", "welcome", "greet", "see you", "looking at me",
-                "thumbs", "holding", "showing",
-            ])
-            no_one_keywords = any(w in text_lower for w in [
-                "no one", "nobody", "empty", "no person", "alone", "waiting",
-            ])
+            person_now_present = any(
+                w in text_lower
+                for w in [
+                    "person",
+                    "someone",
+                    "patient",
+                    "human",
+                    "face",
+                    "man",
+                    "woman",
+                    "hello",
+                    "hi ",
+                    "welcome",
+                    "greet",
+                    "see you",
+                    "looking at me",
+                    "thumbs",
+                    "holding",
+                    "showing",
+                ]
+            )
+            no_one_keywords = any(
+                w in text_lower
+                for w in [
+                    "no one",
+                    "nobody",
+                    "empty",
+                    "no person",
+                    "alone",
+                    "waiting",
+                ]
+            )
 
             if no_one_keywords:
                 person_now_present = False
