@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💊 Reachy RX
+# Reachy RX
 
 **An embodied AI pharmacist robot that watches, reminds, and cares.**
 
@@ -12,9 +12,9 @@ Built on [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) · Powere
 
 ---
 
-Reachy RX is an embodied AI pharmacist that helps elderly patients take the right medications on time. It uses a camera to watch for people and medication bottles, a vision-language model to understand what it sees, and text-to-speech to talk through the robot's speaker — all while expressing itself with head gestures, antenna wiggles, and synthesized sound effects.
+Reachy RX is an embodied AI pharmacist that helps elderly patients take the right medications on time. It uses a camera to watch for people and medication bottles, a vision-language model to understand what it sees, and text-to-speech to talk through the robot's speaker, all while expressing itself with head gestures, antenna wiggles, and synthesized sound effects.
 
-The robot persona is an upbeat, goofy pharmacist — like a cheerful nurse who cracks dad jokes while keeping patients safe.
+The robot persona is an upbeat, goofy pharmacist, like a cheerful nurse who cracks dad jokes while keeping patients safe.
 
 ## Setup
 
@@ -78,7 +78,7 @@ uv run main.py --sheet-url "https://docs.google.com/spreadsheets/d/..."
 
 The vision-language model is **[NVIDIA Nemotron Nano VL 12B V2 (FP8)](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8)**, running on an NVIDIA L40S GPU (48 GiB) hosted on [Brev](https://brev.dev/) and accessed via an OpenAI-compatible API through a Cloudflare tunnel.
 
-- **Model**: `nemotron-nano-12b-vl` — a 13B parameter vision-language model with C-RADIOv2 vision encoder
+- **Model**: `nemotron-nano-12b-vl`, a 13B parameter vision-language model with C-RADIOv2 vision encoder
 - **Quantization**: FP8 for fast inference on NVIDIA GPUs
 - **GPU**: NVIDIA L40S (48 GiB) hosted on [Brev](https://brev.dev/)
 - **Capabilities**: Image understanding, OCR, visual Q&A, tool/function calling
@@ -90,10 +90,10 @@ Pass `--lmstudio` to use the LM Studio client (default), which works around tool
 
 ### Text-to-Speech
 
-Speech is handled by **[MiniMax T2A v2](https://www.minimaxi.com/)** — a cloud TTS API that produces natural-sounding speech.
+Speech is handled by **[MiniMax T2A v2](https://www.minimaxi.com/)**, a cloud TTS API that produces natural-sounding speech.
 
 - **Model**: `speech-2.6-turbo`
-- **Voice**: `English_Upbeat_Woman` — matches the robot's cheerful persona
+- **Voice**: `English_Upbeat_Woman`, matches the robot's cheerful persona
 - **Flow**: Text → MiniMax HTTP API → hex-encoded WAV → decode → resample to 16kHz → push PCM to Reachy's speaker
 - **Behavior**: Non-blocking (daemon thread), drops requests if already speaking
 
@@ -105,20 +105,20 @@ Requires `MINIMAX_TTS_KEY` and `MINIMAX_TTS_GROUP_ID` in your `.env` file.
 
 ### What is Reachy RX?
 
-Reachy RX turns a [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) desktop robot into an **autonomous medication reminder assistant**. It's designed for elderly patients who may forget to take their pills on time — a real problem that leads to [over 100,000 preventable deaths per year](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3934668/) in the US alone.
+Reachy RX turns a [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) desktop robot into an **autonomous medication reminder assistant**. It's designed for elderly patients who may forget to take their pills on time, a real problem that leads to [over 100,000 preventable deaths per year](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3934668/) in the US alone.
 
 Instead of a phone alarm that's easy to ignore, Reachy RX is a physical presence that:
 
 - **Watches** for the patient through a camera
 - **Knows** the medication schedule (pulled live from a Google Sheet)
-- **Reminds** with escalating urgency — gentle chirps at first, alarm beeps if ignored
+- **Reminds** with escalating urgency, gentle chirps at first, alarm beeps if ignored
 - **Verifies** the patient is taking the *right* medication by reading bottle labels
 - **Confirms** with a thumbs-up gesture check before marking meds as taken
-- **Celebrates** when medications are taken — happy wiggles and all
+- **Celebrates** when medications are taken, happy wiggles and all
 
 ### Why Build This?
 
-Medication non-adherence is one of the biggest problems in elder care. Existing solutions (phone alarms, pill organizers, smart dispensers) are either too easy to ignore or too expensive and complex. A robot with a face, a voice, and a personality is much harder to dismiss — and the dad jokes don't hurt either.
+Medication non-adherence is one of the biggest problems in elder care. Existing solutions (phone alarms, pill organizers, smart dispensers) are either too easy to ignore or too expensive and complex. A robot with a face, a voice, and a personality is much harder to dismiss, and the dad jokes don't hurt either.
 
 The key insight: **a medication reminder needs to be persistent AND likeable**. Reachy RX escalates from a gentle chirp to an urgent alarm, but always with a warm personality. It's the difference between a nagging phone notification and a friendly nurse who genuinely cares.
 
@@ -150,11 +150,11 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
   <rect width="900" height="520" rx="12" fill="#fafbfc"/>
 
   <!-- Title -->
-  <text x="450" y="35" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Reachy RX — System Architecture</text>
+  <text x="450" y="35" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Reachy RX - System Architecture</text>
 
   <!-- Google Sheet (external) -->
   <rect x="30" y="60" width="160" height="56" rx="10" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="110" y="84" text-anchor="middle" font-size="11" font-weight="600" fill="#0369a1">📋 Google Sheet</text>
+  <text x="110" y="84" text-anchor="middle" font-size="11" font-weight="600" fill="#0369a1">Google Sheet</text>
   <text x="110" y="100" text-anchor="middle" font-size="9" fill="#64748b">Medication Schedule</text>
 
   <!-- MedicationReminder -->
@@ -169,13 +169,13 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
   <!-- Camera -->
   <rect x="30" y="260" width="160" height="50" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="110" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">📷 Camera</text>
+  <text x="110" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">Camera</text>
   <text x="110" y="298" text-anchor="middle" font-size="9" fill="#64748b">Reachy USB / MacBook fallback</text>
 
   <!-- Main Loop (center) -->
   <rect x="270" y="120" width="240" height="210" rx="14" fill="#f0f9ff" stroke="#6366f1" stroke-width="2" filter="url(#shadow)"/>
-  <text x="390" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#4338ca">🔄 Vision Loop</text>
-  <text x="390" y="166" text-anchor="middle" font-size="9" fill="#64748b">main.py — runs continuously</text>
+  <text x="390" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#4338ca">Vision Loop</text>
+  <text x="390" y="166" text-anchor="middle" font-size="9" fill="#64748b">main.py - runs continuously</text>
   <line x1="290" y1="178" x2="490" y2="178" stroke="#c7d2fe" stroke-width="1"/>
   <text x="300" y="198" font-size="10" fill="#334155">1. Capture frame</text>
   <text x="300" y="216" font-size="10" fill="#334155">2. Build context (meds + people)</text>
@@ -195,7 +195,7 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
   <!-- VLM Cloud (NVIDIA) -->
   <rect x="600" y="80" width="260" height="90" rx="12" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="730" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">🧠 NVIDIA Brev VLM</text>
+  <text x="730" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">NVIDIA Brev VLM</text>
   <text x="730" y="120" text-anchor="middle" font-size="9" fill="#64748b">Nemotron Nano VL 12B V2 (FP8)</text>
   <text x="730" y="135" text-anchor="middle" font-size="9" fill="#64748b">vLLM · OpenAI-compat API</text>
   <text x="730" y="150" text-anchor="middle" font-size="9" fill="#64748b">Image + text → text + tool calls</text>
@@ -211,7 +211,7 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
   <!-- MiniMax TTS -->
   <rect x="600" y="200" width="260" height="70" rx="12" fill="#fdf2f8" stroke="#ec4899" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="730" y="224" text-anchor="middle" font-size="11" font-weight="700" fill="#9d174d">🔊 MiniMax TTS</text>
+  <text x="730" y="224" text-anchor="middle" font-size="11" font-weight="700" fill="#9d174d">MiniMax TTS</text>
   <text x="730" y="240" text-anchor="middle" font-size="9" fill="#64748b">speech-2.6-turbo · English_Upbeat_Woman</text>
   <text x="730" y="256" text-anchor="middle" font-size="9" fill="#64748b">Text → WAV → resample 16kHz → speaker</text>
 
@@ -221,7 +221,7 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
   <!-- Reachy Hardware -->
   <rect x="600" y="310" width="260" height="90" rx="12" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="730" y="334" text-anchor="middle" font-size="11" font-weight="700" fill="#9a3412">🤖 Reachy Mini Hardware</text>
+  <text x="730" y="334" text-anchor="middle" font-size="11" font-weight="700" fill="#9a3412">Reachy Mini Hardware</text>
   <text x="730" y="352" text-anchor="middle" font-size="9" fill="#64748b">Head: pitch, yaw, roll via servo motors</text>
   <text x="730" y="367" text-anchor="middle" font-size="9" fill="#64748b">Antennas: expressive positioning</text>
   <text x="730" y="382" text-anchor="middle" font-size="9" fill="#64748b">Speaker: 16kHz PCM audio output</text>
@@ -232,16 +232,16 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
   <!-- Sound Effects -->
   <rect x="270" y="370" width="240" height="60" rx="10" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="390" y="394" text-anchor="middle" font-size="11" font-weight="600" fill="#7e22ce">🎵 Synthesized Sound Effects</text>
+  <text x="390" y="394" text-anchor="middle" font-size="11" font-weight="600" fill="#7e22ce">Synthesized Sound Effects</text>
   <text x="390" y="410" text-anchor="middle" font-size="9" fill="#64748b">Chirps (gentle→urgent) · Celebration arpeggio</text>
-  <text x="390" y="424" text-anchor="middle" font-size="9" fill="#64748b">Pure numpy @ 16kHz — no audio files</text>
+  <text x="390" y="424" text-anchor="middle" font-size="9" fill="#64748b">Pure numpy @ 16kHz, no audio files</text>
 
   <!-- Arrow: Sounds → Reachy -->
   <line x1="510" y1="400" x2="598" y2="380" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
 
   <!-- Taken Log -->
   <rect x="30" y="370" width="160" height="50" rx="10" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="110" y="392" text-anchor="middle" font-size="11" font-weight="600" fill="#57534e">💾 medication_taken.json</text>
+  <text x="110" y="392" text-anchor="middle" font-size="11" font-weight="600" fill="#57534e">medication_taken.json</text>
   <text x="110" y="408" text-anchor="middle" font-size="9" fill="#64748b">Daily persistence · keyed by date</text>
 
   <!-- Arrow: Main → Taken Log -->
@@ -274,7 +274,7 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
 ### How the Vision Loop Works
 
-The core of Reachy RX is a **sequential vision loop** in `main.py`. It runs one iteration at a time — no overlapping frames, no parallel audio — to keep things simple and prevent garbled speech.
+The core of Reachy RX is a **sequential vision loop** in `main.py`. It runs one iteration at a time, no overlapping frames, no parallel audio, to keep things simple and prevent garbled speech.
 
 Here's what happens on every cycle:
 
@@ -283,13 +283,13 @@ Here's what happens on every cycle:
 │                    VISION LOOP                      │
 │                                                     │
 │  ┌──────────┐    Is this a new person?              │
-│  │ 📷 Grab  │    Any medications due right now?     │
+│  │ Grab  │    Any medications due right now?     │
 │  │  Frame   │──▶ What meds were already taken?      │
 │  └──────────┘    Build a context string from all    │
 │       │          of this and inject it.             │
 │       ▼                                             │
 │  ┌──────────────────────────┐                       │
-│  │ 🧠 Send to VLM          │                       │
+│  │ Send to VLM          │                       │
 │  │                          │                       │
 │  │  System prompt (persona) │                       │
 │  │  + injected context      │                       │
@@ -299,7 +299,7 @@ Here's what happens on every cycle:
 │       │                                             │
 │       ▼                                             │
 │  ┌──────────────────────────┐                       │
-│  │ 📋 Parse Response        │                       │
+│  │ Parse Response        │                       │
 │  │                          │                       │
 │  │  Text (internal thought) │                       │
 │  │  + Tool calls (actions)  │                       │
@@ -307,7 +307,7 @@ Here's what happens on every cycle:
 │       │                                             │
 │       ▼                                             │
 │  ┌──────────────────────────┐                       │
-│  │ 🤖 Execute Actions       │                       │
+│  │ Execute Actions       │                       │
 │  │                          │                       │
 │  │  nod_yes / shake_no      │                       │
 │  │  look_at(direction)      │                       │
@@ -317,10 +317,10 @@ Here's what happens on every cycle:
 │  └──────────────────────────┘                       │
 │       │                                             │
 │       ▼                                             │
-│  ⏳ Wait for TTS to finish (up to 20s)             │
+│  Wait for TTS to finish (up to 20s)             │
 │       │                                             │
 │       ▼                                             │
-│  🔁 Track person presence state → next frame        │
+│  Track person presence state → next frame        │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -328,7 +328,7 @@ Here's what happens on every cycle:
 
 ### Where the Schedule Comes From
 
-The medication schedule lives in a **public Google Sheet** — no API keys, no OAuth, no database. Just a shared spreadsheet that a caregiver or pharmacist can edit from anywhere.
+The medication schedule lives in a **Google Sheet**, just a shared spreadsheet that a caregiver or pharmacist can edit from anywhere. No database, no custom backend.
 
 | Medication | Dosage | Form | Frequency | Times | Instructions | Condition |
 |---|---|---|---|---|---|---|
@@ -336,7 +336,7 @@ The medication schedule lives in a **public Google Sheet** — no API keys, no O
 | Omeprazole | 20mg | Capsule | Once daily | 07:30 | Before breakfast | Acid reflux |
 | Metformin | 500mg | Tablet | Twice daily | 08:00,18:00 | Take with food | Diabetes |
 
-The system reads this via Google's `gviz` JSON endpoint (a public API that works on any "anyone with the link" sheet). No auth tokens needed.
+The system reads this via Google's `gviz` JSON endpoint, a lightweight way to pull structured data from Sheets without a full API integration.
 
 **How reminders work:**
 
@@ -357,9 +357,9 @@ Reachy doesn't just remind once and give up. It gets increasingly animated:
 | 🟢 | 1 | Gentle chirp ↗ | Soft head tilt + curious antenna perk | "Hey, just a reminder..." |
 | 🟡 | 2 | Double chirp ↗↗ | Bouncy side-to-side wiggle | "C'mon, time for your meds!" |
 | 🟠 | 3 | Triple chirp ↗↗↗ | Wiggles + antenna flapping + look-up plea | "Please? Pretty please?" |
-| 🔴 | 4+ | Alarm beeps 🚨 | Rapid wiggles → sad droop → hopeful perk-up | "I'm REALLY worried now!" |
+| 🔴 | 4+ | Alarm beeps | Rapid wiggles → sad droop → hopeful perk-up | "I'm REALLY worried now!" |
 
-All sounds are **synthesized with numpy** at runtime — no audio files. Pure math generating chirps, arpeggios, and alarm tones at 16kHz.
+All sounds are **synthesized with numpy** at runtime, no audio files. Pure math generating chirps, arpeggios, and alarm tones at 16kHz.
 
 ### The Robot's Actions (Tool System)
 
@@ -372,7 +372,7 @@ The VLM controls Reachy through **6 tool calls** defined as OpenAI-format functi
 | `look_at(direction)` | Track patient position | Head turns to left/right/up/down/center |
 | `speak(message)` | **Talk to the patient** (only audible output) | MiniMax TTS → WAV → Reachy speaker |
 | `remind_medication(name)` | Play reminder chirp + gesture | Escalating animation based on nag count |
-| `mark_medication_taken(name, due_time)` | Record med as taken | 🎉 Celebration sound + happy wiggle dance |
+| `mark_medication_taken(name, due_time)` | Record med as taken | Celebration sound + happy wiggle dance |
 
 > **Important:** `speak()` is the **only** way the patient hears the robot. Everything else the VLM outputs is internal thinking. If the model doesn't call `speak()`, the patient hears nothing.
 
@@ -429,7 +429,7 @@ The VLM controls Reachy through **6 tool calls** defined as OpenAI-format functi
   <text x="645" y="88" text-anchor="middle" font-size="10" fill="#166534">Patient gives thumbs up</text>
   <text x="645" y="108" text-anchor="middle" font-size="10" fill="#166534">↓</text>
   <text x="645" y="124" text-anchor="middle" font-size="10" fill="#166534">mark_medication_taken()</text>
-  <text x="645" y="140" text-anchor="middle" font-size="10" fill="#166534">🎉 Celebration sound</text>
+  <text x="645" y="140" text-anchor="middle" font-size="10" fill="#166534">Celebration sound</text>
   <text x="645" y="156" text-anchor="middle" font-size="10" fill="#166534">Happy wiggle dance</text>
   <text x="645" y="172" text-anchor="middle" font-size="10" fill="#166534">speak("Boom! You're</text>
   <text x="645" y="188" text-anchor="middle" font-size="10" fill="#166534">  basically a superhero.")</text>
@@ -441,7 +441,7 @@ The VLM controls Reachy through **6 tool calls** defined as OpenAI-format functi
 
 ### Person Presence Detection
 
-The vision loop tracks whether someone is in front of the camera using a simple **keyword-based state machine** — no separate face detection model needed.
+The vision loop tracks whether someone is in front of the camera using a simple **keyword-based state machine**, no separate face detection model needed.
 
 After each VLM response, the text output is scanned for keywords:
 
@@ -459,8 +459,8 @@ The VLM integration uses an **abstract base class** pattern so backends are swap
 
 ```
 BaseVLMClient (ABC)
-├── LMStudioVLMClient  — Tools described in system prompt, parsed from text via regex
-└── OpenAIVLMClient    — Native structured tool calls via tools= API parameter
+├── LMStudioVLMClient  - Tools described in system prompt, parsed from text via regex
+└── OpenAIVLMClient    - Native structured tool calls via tools= API parameter
 ```
 
 **Why two clients?** LM Studio's tool call parser silently drops tool calls for certain models (including Nemotron VL). The LM Studio client works around this by embedding tool descriptions in the system prompt and using regex to extract calls like `nod_yes()` or `speak({"message": "Hello!"})` from the model's text output.
@@ -477,13 +477,13 @@ Both clients share:
 
 | File | Purpose |
 |---|---|
-| `main.py` | Entry point — vision loop, camera init, Reachy connection, context injection, person state machine |
+| `main.py` | Entry point, vision loop, camera init, Reachy connection, context injection, person state machine |
 | `vlm_client.py` | Base client + tool definitions (6 tools) + `execute_tool_calls()` gesture choreography |
-| `vlm_client_lmstudio.py` | LM Studio backend — regex-based text tool call parsing |
+| `vlm_client_lmstudio.py` | LM Studio backend, regex-based text tool call parsing |
 | `vlm_client_openai.py` | Standard OpenAI-compatible backend |
 | `medication_reminder.py` | Google Sheets schedule fetcher, due-med checker, taken-log persistence |
 | `minimax_tts.py` | Direct MiniMax HTTP TTS → Reachy speaker, non-blocking daemon thread |
-| `sounds.py` | Synthesized sound effects (chirps, celebration) — pure numpy, no audio files |
+| `sounds.py` | Synthesized sound effects (chirps, celebration), pure numpy, no audio files |
 | `macbook_camera.py` | MacBook FaceTime camera fallback for development |
 | `system_prompt.md` | Robot persona, behavior rules, action examples |
 | `medication_taken.json` | Daily log of medications taken (auto-generated, gitignored) |
@@ -492,10 +492,10 @@ Both clients share:
 
 | Component | Technology |
 |---|---|
-| **Robot** | [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) — desktop robot with head servos, antennas, speaker |
-| **VLM** | [NVIDIA Nemotron Nano VL 12B V2 FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8) — 13B param vision-language model on NVIDIA L40S (48 GiB) via [Brev](https://brev.dev/) |
-| **TTS** | [MiniMax T2A v2](https://www.minimaxi.com/) — `speech-2.6-turbo` model, `English_Upbeat_Woman` voice |
-| **Schedule** | Google Sheets via public gviz JSON API (no auth) |
+| **Robot** | [Reachy Mini](https://github.com/pollen-robotics/reachy-mini), desktop robot with head servos, antennas, speaker |
+| **VLM** | [NVIDIA Nemotron Nano VL 12B V2 FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8), 13B param vision-language model on NVIDIA L40S (48 GiB) via [Brev](https://brev.dev/) |
+| **TTS** | [MiniMax T2A v2](https://www.minimaxi.com/), `speech-2.6-turbo` model, `English_Upbeat_Woman` voice |
+| **Schedule** | Google Sheets via gviz JSON API |
 | **Language** | Python 3.11–3.12, managed with [uv](https://docs.astral.sh/uv/) |
 | **Vision** | OpenCV (BGR → JPEG → base64) |
 | **Audio** | numpy-synthesized sounds at 16kHz, pushed via Reachy's PCM speaker API |
