@@ -8,7 +8,6 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -20,7 +19,6 @@ from openai.types.chat import ChatCompletionMessageToolCall
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_PATH = Path(__file__).parent / "system_prompt.md"
-MEDICATION_LOG_PATH = Path(__file__).parent / "medication_log.json"
 
 # Thread pool for async LLM calls — overlap network latency with action execution
 _llm_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="vlm")
@@ -34,7 +32,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "nod_yes",
-            "description": "Make Reachy nod its head up and down to signal agreement.",
+            "description": "Nod head to say yes or confirm something is correct.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -42,7 +40,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "shake_no",
-            "description": "Make Reachy shake its head side to side to signal disagreement.",
+            "description": "Shake head to say no or signal something is wrong.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -50,14 +48,14 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "look_at",
-            "description": "Make Reachy look at a specific direction.",
+            "description": "Turn to look in a direction to keep the patient centered.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "direction": {
                         "type": "string",
                         "enum": ["left", "right", "up", "down", "center"],
-                        "description": "The direction for Reachy to look.",
+                        "description": "The direction to look.",
                     }
                 },
                 "required": ["direction"],
@@ -67,59 +65,8 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "express_emotion",
-            "description": "Make Reachy express an emotion through body language.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "emotion": {
-                        "type": "string",
-                        "enum": ["happy", "sad", "surprised", "curious"],
-                        "description": "The emotion to express.",
-                    }
-                },
-                "required": ["emotion"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "log_medication",
-            "description": "Log an identified medication with its details for patient safety tracking.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Medication name (brand and/or generic).",
-                    },
-                    "dosage": {
-                        "type": "string",
-                        "description": "Dosage strength (e.g. '500mg', '10mg/5mL').",
-                    },
-                    "form": {
-                        "type": "string",
-                        "description": "Dosage form (e.g. 'tablet', 'capsule', 'liquid', 'cream').",
-                    },
-                    "count": {
-                        "type": "string",
-                        "description": "Quantity / count on the label (e.g. '90 tablets', '120 mL').",
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Any other details: manufacturer, warnings, active/inactive ingredients, expiration, NDC, etc.",
-                    },
-                },
-                "required": ["name"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "remind_medication",
-            "description": "Remind the patient to take a due medication. Performs an escalating cute gesture. Keep calling this until the patient gives a thumbs up.",
+            "description": "Remind the patient to take a due medication.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -140,7 +87,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "mark_medication_taken",
-            "description": "Mark a medication as taken after the patient confirms they took it. Records the timestamp.",
+            "description": "Mark a medication as taken after the patient confirms with a thumbs up.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -348,75 +295,6 @@ def execute_tool_calls(
                 "center": REST,
             }
             mini.goto_target(head=poses.get(direction, REST), duration=0.6)
-
-        elif name == "express_emotion":
-            emotion = args.get("emotion", "curious")
-
-            if emotion == "happy":
-                mini.goto_target(
-                    head=create_head_pose(pitch=8, z=6, degrees=True, mm=True),
-                    antennas=[0.35, -0.35],
-                    duration=0.4,
-                )
-                mini.goto_target(
-                    head=create_head_pose(pitch=8, z=6, degrees=True, mm=True),
-                    antennas=[-0.35, 0.35],
-                    duration=0.4,
-                )
-                mini.goto_target(head=REST, antennas=[0.0, 0.0], duration=0.4)
-
-            elif emotion == "sad":
-                mini.goto_target(
-                    head=create_head_pose(pitch=-12, z=-3, degrees=True, mm=True),
-                    antennas=[-0.2, -0.2],
-                    duration=1.0,
-                )
-                mini.goto_target(head=REST, antennas=[0.0, 0.0], duration=0.8)
-
-            elif emotion == "surprised":
-                mini.goto_target(
-                    head=create_head_pose(pitch=12, z=8, degrees=True, mm=True),
-                    antennas=[0.45, 0.45],
-                    duration=0.35,
-                )
-                mini.goto_target(head=REST, antennas=[0.0, 0.0], duration=0.6)
-
-            elif emotion == "curious":
-                mini.goto_target(
-                    head=create_head_pose(roll=12, pitch=7, degrees=True),
-                    duration=0.5,
-                )
-                mini.goto_target(head=REST, duration=0.5)
-
-        elif name == "log_medication":
-            entry = {
-                "timestamp": datetime.now().isoformat(),
-                "name": args.get("name", "unknown"),
-                "dosage": args.get("dosage"),
-                "form": args.get("form"),
-                "count": args.get("count"),
-                "description": args.get("description"),
-            }
-            # Strip None values for cleaner output
-            entry = {k: v for k, v in entry.items() if v is not None}
-
-            # Append to JSON log file
-            if MEDICATION_LOG_PATH.exists():
-                log_data = json.loads(MEDICATION_LOG_PATH.read_text())
-            else:
-                log_data = []
-            log_data.append(entry)
-            MEDICATION_LOG_PATH.write_text(json.dumps(log_data, indent=2) + "\n")
-            print(f"  💊 Logged: {entry['name']} — {entry.get('dosage', '?')} {entry.get('form', '')} (count: {entry.get('count', '?')})")
-
-            # Reachy nods to confirm the log
-            mini.goto_target(
-                head=create_head_pose(pitch=10, degrees=True), duration=0.3
-            )
-            mini.goto_target(
-                head=create_head_pose(pitch=-6, degrees=True), duration=0.3
-            )
-            mini.goto_target(head=REST, duration=0.35)
 
         elif name == "remind_medication":
             med_name = args["name"]  # guaranteed by guard above
