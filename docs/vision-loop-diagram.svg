@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 620" font-family="Inter, system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6366f1"/>
+    </marker>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="520" height="620" rx="12" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="260" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">Vision Loop Cycle</text>
+  <text x="260" y="50" text-anchor="middle" font-size="10" fill="#94a3b8">Jetson Nano Super - main.py</text>
+
+  <!-- Step 1: Grab Frame -->
+  <rect x="130" y="70" width="260" height="52" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="93" text-anchor="middle" font-size="12" font-weight="600" fill="#92400e">1. Grab Frame</text>
+  <text x="260" y="110" text-anchor="middle" font-size="9" fill="#78350f">Capture from Reachy USB or MacBook camera</text>
+
+  <!-- Arrow -->
+  <line x1="260" y1="122" x2="260" y2="142" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 2: Build Context -->
+  <rect x="130" y="144" width="260" height="68" rx="10" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="167" text-anchor="middle" font-size="12" font-weight="600" fill="#0369a1">2. Build Context</text>
+  <text x="260" y="184" text-anchor="middle" font-size="9" fill="#0c4a6e">New person or already greeted?</text>
+  <text x="260" y="198" text-anchor="middle" font-size="9" fill="#0c4a6e">Any medications due now? Already taken?</text>
+
+  <!-- Arrow -->
+  <line x1="260" y1="212" x2="260" y2="232" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 3: Send to VLM -->
+  <rect x="130" y="234" width="260" height="68" rx="10" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="257" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">3. Send to VLM</text>
+  <text x="260" y="274" text-anchor="middle" font-size="9" fill="#14532d">System prompt + context + frame + history</text>
+  <text x="260" y="288" text-anchor="middle" font-size="9" fill="#14532d">Nemotron Nano VL via Cloudflare tunnel</text>
+
+  <!-- Arrow -->
+  <line x1="260" y1="302" x2="260" y2="322" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 4: Parse Response -->
+  <rect x="130" y="324" width="260" height="52" rx="10" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="347" text-anchor="middle" font-size="12" font-weight="600" fill="#7e22ce">4. Parse Response</text>
+  <text x="260" y="364" text-anchor="middle" font-size="9" fill="#581c87">Text (internal thought) + tool calls (actions)</text>
+
+  <!-- Arrow -->
+  <line x1="260" y1="376" x2="260" y2="396" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 5: Execute Actions -->
+  <rect x="130" y="398" width="260" height="80" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="421" text-anchor="middle" font-size="12" font-weight="600" fill="#9a3412">5. Execute Actions</text>
+  <text x="260" y="438" text-anchor="middle" font-size="9" fill="#7c2d12">nod_yes / shake_no / look_at</text>
+  <text x="260" y="452" text-anchor="middle" font-size="9" fill="#7c2d12">speak(message) via MiniMax TTS</text>
+  <text x="260" y="466" text-anchor="middle" font-size="9" fill="#7c2d12">remind_medication / mark_medication_taken</text>
+
+  <!-- Arrow -->
+  <line x1="260" y1="478" x2="260" y2="498" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 6: Wait + Track -->
+  <rect x="130" y="500" width="260" height="52" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="523" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">6. Wait for TTS + Track State</text>
+  <text x="260" y="540" text-anchor="middle" font-size="9" fill="#64748b">Wait up to 20s, update person presence</text>
+
+  <!-- Loop-back arrow -->
+  <path d="M 260 552 L 260 575 Q 260 590 245 590 L 80 590 Q 65 590 65 575 L 65 90 Q 65 75 80 75 L 128 75" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+  <text x="60" y="340" text-anchor="middle" font-size="9" fill="#6366f1" transform="rotate(-90, 60, 340)">next frame</text>
+</svg>

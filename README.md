@@ -128,51 +128,7 @@ The core of Reachy RX is a **sequential vision loop** in `main.py`, running on a
 
 Here's what happens on every cycle:
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    VISION LOOP                      │
-│                                                     │
-│  ┌──────────┐    Is this a new person?              │
-│  │ Grab  │    Any medications due right now?     │
-│  │  Frame   │──▶ What meds were already taken?      │
-│  └──────────┘    Build a context string from all    │
-│       │          of this and inject it.             │
-│       ▼                                             │
-│  ┌──────────────────────────┐                       │
-│  │ Send to VLM          │                       │
-│  │                          │                       │
-│  │  System prompt (persona) │                       │
-│  │  + injected context      │                       │
-│  │  + camera frame          │                       │
-│  │  + action history        │                       │
-│  └──────────────────────────┘                       │
-│       │                                             │
-│       ▼                                             │
-│  ┌──────────────────────────┐                       │
-│  │ Parse Response        │                       │
-│  │                          │                       │
-│  │  Text (internal thought) │                       │
-│  │  + Tool calls (actions)  │                       │
-│  └──────────────────────────┘                       │
-│       │                                             │
-│       ▼                                             │
-│  ┌──────────────────────────┐                       │
-│  │ Execute Actions       │                       │
-│  │                          │                       │
-│  │  nod_yes / shake_no      │                       │
-│  │  look_at(direction)      │                       │
-│  │  speak(message) → TTS    │                       │
-│  │  remind_medication(name) │                       │
-│  │  mark_medication_taken() │                       │
-│  └──────────────────────────┘                       │
-│       │                                             │
-│       ▼                                             │
-│  Wait for TTS to finish (up to 20s)             │
-│       │                                             │
-│       ▼                                             │
-│  Track person presence state → next frame        │
-└─────────────────────────────────────────────────────┘
-```
+![Vision Loop](docs/vision-loop-diagram.svg)
 
 **Why sequential?** Overlapping frames while audio is playing leads to the VLM seeing a "speaking robot" state and generating contradictory actions. Running one complete cycle at a time keeps behavior predictable.
 
