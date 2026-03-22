@@ -4,3 +4,5 @@ __pycache__/
 .stakpak/session*
 debug_frames/
 medication_log.json
+medication_taken.json
+medicine_schedule.csv

@@ -17,7 +17,6 @@ Usage:
 import json
 import logging
 import re
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -124,7 +123,12 @@ class LMStudioVLMClient(BaseVLMClient):
     ) -> tuple[str, list[ChatCompletionMessageToolCall]]:
         image_url = self.encode_frame(frame)
         history_block = self._build_history_block()
-        user_text = f"What do you see? React if appropriate.{history_block}"
+        user_text = f"What do you see? Describe any people and their gestures (especially thumbs up). React if appropriate.{history_block}"
+
+        # Inject extra context if pending (person status, reminders, etc.)
+        if self._pending_context:
+            user_text = f"{self._pending_context}\n\n{user_text}"
+            self._pending_context = None
 
         messages = [
             {"role": "system", "content": self.system_prompt},
