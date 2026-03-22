@@ -480,6 +480,11 @@ def execute_tool_calls(
         elif name == "speak":
             message = args.get("message", "")
             if message and tts:
+                # Wait for any previous speak() to finish before starting a new one
+                import time as _time
+                _deadline = _time.monotonic() + 20.0
+                while tts.speaking and _time.monotonic() < _deadline:
+                    _time.sleep(0.1)
                 print(f"  🔊 \"{message}\"")
                 tts.speak(message)
             elif message:
