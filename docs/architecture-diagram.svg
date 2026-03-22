@@ -43,7 +43,7 @@
   <!-- Main Loop (center) -->
   <rect x="270" y="120" width="240" height="210" rx="14" fill="#f0f9ff" stroke="#6366f1" stroke-width="2" filter="url(#shadow)"/>
   <text x="390" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#4338ca">Vision Loop</text>
-  <text x="390" y="166" text-anchor="middle" font-size="9" fill="#64748b">main.py - runs continuously</text>
+  <text x="390" y="166" text-anchor="middle" font-size="9" fill="#64748b">Jetson Nano Super - main.py</text>
   <line x1="290" y1="178" x2="490" y2="178" stroke="#c7d2fe" stroke-width="1"/>
   <text x="300" y="198" font-size="10" fill="#334155">1. Capture frame</text>
   <text x="300" y="216" font-size="10" fill="#334155">2. Build context (meds + people)</text>

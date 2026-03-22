@@ -6,8 +6,6 @@
 
 Built on [Reachy Mini](https://github.com/pollen-robotics/reachy-mini) · Powered by [NVIDIA Nemotron Nano VL](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8) · Voice by [MiniMax TTS](https://www.minimaxi.com/)
 
-![arch](arch-reachy-rx.png)
-
 </div>
 
 ---
@@ -128,7 +126,7 @@ The key insight: **a medication reminder needs to be persistent AND likeable**. 
 
 ### How the Vision Loop Works
 
-The core of Reachy RX is a **sequential vision loop** in `main.py`. It runs one iteration at a time, no overlapping frames, no parallel audio, to keep things simple and prevent garbled speech.
+The core of Reachy RX is a **sequential vision loop** in `main.py`, running on a **NVIDIA Jetson Nano Super**. It runs one iteration at a time, no overlapping frames, no parallel audio, to keep things simple and prevent garbled speech.
 
 Here's what happens on every cycle:
 
@@ -288,6 +286,7 @@ Both clients share:
 | Component | Technology |
 |---|---|
 | **Robot** | [Reachy Mini](https://github.com/pollen-robotics/reachy-mini), desktop robot with head servos, antennas, speaker |
+| **Edge Compute** | NVIDIA Jetson Nano Super, runs the vision loop and all local processing |
 | **VLM** | [NVIDIA Nemotron Nano VL 12B V2 FP8](https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8), 13B param vision-language model on NVIDIA L40S (48 GiB) via [Brev](https://brev.dev/) |
 | **TTS** | [MiniMax T2A v2](https://www.minimaxi.com/), `speech-2.6-turbo` model, `English_Upbeat_Woman` voice |
 | **Schedule** | Google Sheets via gviz JSON API |
