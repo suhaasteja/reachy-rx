@@ -1,0 +1,19 @@
+[project]
+name = "reachy"
+version = "0.1.0"
+description = "Reachy Mini pharmacist robot — medication identification, reminders, and patient interaction"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "reachy-mini[mujoco]>=1.5.1",
+    "openai>=1.0.0",
+    "sounddevice>=0.5.5",
+    "soundfile>=0.13.1",
+]
+
+[tool.uv]
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+    "sys_platform == 'win32'",
+]
