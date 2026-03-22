@@ -160,7 +160,7 @@ class BaseVLMClient(ABC):
     @staticmethod
     def encode_frame(frame: npt.NDArray[np.uint8]) -> str:
         """Encode a BGR numpy frame to a base64 JPEG data URI."""
-        _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         b64 = base64.b64encode(buf.tobytes()).decode("utf-8")
         return f"data:image/jpeg;base64,{b64}"
 
@@ -172,9 +172,11 @@ class BaseVLMClient(ABC):
         lines = "\n".join(self._history)
         return (
             f"\n\nYour recent actions (most recent last):\n{lines}\n\n"
-            "Do NOT repeat the same action if the scene hasn't changed. Vary your reactions.\n"
-            "ALWAYS check: Is the patient showing a THUMBS UP (thumb pointing up, fist closed)? "
-            "If yes → call mark_medication_taken({\"name\": \"MED_NAME\", \"due_time\": \"HH:MM\"}) with the ACTUAL medication name and time. NEVER use empty arguments."
+            "IMPORTANT:\n"
+            "- Do NOT repeat the same action/speech if the scene hasn't changed.\n"
+            "- If the patient is HOLDING UP a bottle or box, READ THE LABEL and compare it to any due medication.\n"
+            "- If you see a THUMBS UP → call mark_medication_taken() with the ACTUAL medication name and time.\n"
+            "- Check your history above — if you already greeted, do NOT greet again."
         )
 
     def _record(self, text: str, tool_calls: list) -> None:
@@ -182,7 +184,7 @@ class BaseVLMClient(ABC):
         for tc in tool_calls:
             parts.append(f"[action] {tc.function.name}({tc.function.arguments})")
         if text:
-            parts.append(f"[observation] {text[:120]}")
+            parts.append(f"[observation] {text[:250]}")
         if parts:
             self._history.append(" | ".join(parts))
         if len(self._history) > self.history_max:

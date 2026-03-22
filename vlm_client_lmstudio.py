@@ -147,7 +147,7 @@ class LMStudioVLMClient(BaseVLMClient):
     ) -> tuple[str, list[ChatCompletionMessageToolCall]]:
         image_url = self.encode_frame(frame)
         history_block = self._build_history_block()
-        user_text = f"What do you see? Describe any people and their gestures (especially thumbs up). React if appropriate.{history_block}"
+        user_text = f"Look at the image. Check for: 1) people and hand gestures (especially thumbs up), 2) medication bottles or labels being held up. Act according to your instructions.{history_block}"
 
         # Inject extra context if pending (person status, reminders, etc.)
         if self._pending_context:
