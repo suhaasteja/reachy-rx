@@ -8,14 +8,15 @@ from reachy_mini.media.camera_utils import find_camera
 
 from medication_reminder import MedicationReminder
 from vlm_client import execute_tool_calls
-from vlm_client_lmstudio import LMStudioVLMClient as VLMClient
-
-# from vlm_client_openai import OpenAIVLMClient as VLMClient
+# from vlm_client_lmstudio import LMStudioVLMClient as VLMClient
+from vlm_client_openai import OpenAIVLMClient as VLMClient
 
 FRAME_DEBUG_DIR = Path("debug_frames")
 
 parser = argparse.ArgumentParser(description="Reachy Mini VLM vision loop")
 parser.add_argument("--debug", action="store_true", help="Enable debug logging and frame capture")
+parser.add_argument("--model", type=str, default="nvidia-nemotron-nano-12b-v2-vl", help="VLM model name")
+parser.add_argument("--server", type=str, default="http://localhost:1234/v1", help="VLM server base URL")
 parser.add_argument(
     "--sheet-url",
     type=str,
@@ -72,7 +73,7 @@ with ReachyMini(media_backend="sounddevice_no_video") as mini:
 
     cam = open_camera()
 
-    vlm = VLMClient(model="nvidia-nemotron-nano-12b-v2-vl")
+    vlm = VLMClient(model=args.model, base_url=args.server)
     print(f"✓ VLM client ready — model: {vlm.model}")
 
     # Medication reminder — reads schedule from Google Sheet

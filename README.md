@@ -35,8 +35,11 @@ In a **new terminal**:
 ```bash
 uv run main.py          # normal mode
 uv run main.py --debug  # save frames + verbose logging
+
+# custom model/server
+uv run main.py --model my-model --server http://host:8000/v1
 ```
 
 ### VLM Backend
 
-The app expects a VLM running locally. Start [LM Studio](https://lmstudio.ai/) with the `nvidia-nemotron-nano-12b-v2-vl` model loaded on `http://localhost:1234/v1`.
+The app expects an OpenAI-compatible VLM server. By default it connects to `http://localhost:1234/v1` with model `nvidia-nemotron-nano-12b-v2-vl`. Override with `--model` and `--server`.
